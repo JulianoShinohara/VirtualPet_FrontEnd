@@ -22,6 +22,8 @@ local input1 = {text = ""}
 local input2 = {text = ""}
 local button = {}
 
+local JSON = assert(loadfile "C:/VirtualPet_FrontEnd/json.lua")()
+
 local function validate(input)
     local len = utf8.len(input.text)
 

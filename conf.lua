@@ -1,5 +1,6 @@
 function love.conf(t)
-	author = "Guerra"
-    t.window.width = 250 --largura
-    t.window.height = 400 --altura
+    author = "Shino"
+    t.window.width = 400 --largura
+    t.window.height = 600 --altura
+    --t.console = true
 end

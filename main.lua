@@ -2,8 +2,9 @@
 background_login = love.graphics.newImage('login_screen.png')
 background_cadastro = love.graphics.newImage('cadastro_screen.png')
 pet_amarelo = love.graphics.newImage('amarelo.png')
-pet_roxo =love.graphics.newImage('roxo.png')
-
+pet_roxo = love.graphics.newImage('roxo.png')
+pet_amarelo_feliz = love.graphics.newImage('feliz_01.png')
+pet_roxo_feliz = love.graphics.newImage('feliz_02.png')
 --** Dependencias SUIT
 local suit = require 'suit'
 local utf8 = require 'utf8'
@@ -22,7 +23,7 @@ local ltn12 = require("ltn12")
     LISTAGEM_SCREEN
     GAME_SCREEN
 ]]
-local ACTUAL_SCREEN = "CADASTRO_PET_SCREEN"
+local ACTUAL_SCREEN = "LISTAGEM_SCREEN"
 local usuario_logado = {}
 
 --** Variáveis do botão
@@ -62,6 +63,11 @@ local form_login_user = {text = ""}
 local form_password_user = {text = ""}
 local form_nome_pet = {text = ""}
 local button = {}
+
+--[[
+    VARIÁVEIS TELA DE CADASTRO DE PET
+]]
+local pet1 = true
 
 --** Funcao que coleta o retorno das requisições
 local function collect(chunk)
@@ -155,8 +161,13 @@ function love.draw(dt)
         love.graphics.setBackgroundColor(red, green, blue, 0)
         suit.draw()
 
-        love.graphics.draw(pet_amarelo, 0, 270)
-        love.graphics.draw(pet_roxo, 200, 270)
+        if pet1 == true then
+            love.graphics.draw(pet_amarelo_feliz, 0, 270)
+            love.graphics.draw(pet_roxo, 200, 270)
+        else
+            love.graphics.draw(pet_amarelo, 0, 270)
+            love.graphics.draw(pet_roxo_feliz, 200, 270)
+        end
 
         love.graphics.setColor(0, 255, 0)
         love.graphics.rectangle("fill", x, y+300, w, h, border_radius)
@@ -309,7 +320,7 @@ function love.mousepressed(x, y)
         if x >= button_x and x <= button_x + button_width and y >= (button_y + 50) and y <= (button_y + 50) + button_height then
             ACTUAL_SCREEN = "CADASTRO_USUARIO_SCREEN"
         end
-    --** Se eu ja estiver na tela de cadastro
+    --** Se estiver na tela de cadastro
     elseif ACTUAL_SCREEN == "CADASTRO_USUARIO_SCREEN" then
         --** Se apertou o botão
         if x >= button_x and x <= button_x + button_width and y >= button_y and y <= button_y + button_height then
@@ -332,6 +343,8 @@ function love.mousepressed(x, y)
         if x >= 5 and x <= 40 and y >= 560 and y <= 600 then
             ACTUAL_SCREEN = "LOGGIN_SCREEN"
         end
+    
+    --** Se estiver na tela de listagem
     elseif ACTUAL_SCREEN == "LISTAGEM_SCREEN" then
         if x >= button_x and x <= button_x + button_width and y >= button_y and y <= button_y + button_height then
             ACTUAL_SCREEN = "CADASTRO_PET_SCREEN"
@@ -339,6 +352,17 @@ function love.mousepressed(x, y)
 
         if x >= 5 and x <= 40 and y >= 560 and y <= 600 then
             ACTUAL_SCREEN = "LOGGIN_SCREEN"
+        end
+    --** Se estiver na tela de cadastro de pet
+    elseif ACTUAL_SCREEN == "CADASTRO_PET_SCREEN" then
+        if x >= 0 and x <= 200 and y >= 270 and y <= 270 + 200 then
+            pet1 = true
+        end
+        if x >= 200 and x <= 400 and y >= 270 and y <= 270 + 200 then
+            pet1 = false
+        end
+        if x >= 75 and x <= 400 and y >= 270 and y <= 270 + 200 then
+            pet1 = false
         end
     end
 end

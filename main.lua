@@ -5,6 +5,7 @@ pet_amarelo = love.graphics.newImage('amarelo.png')
 pet_roxo = love.graphics.newImage('roxo.png')
 pet_amarelo_feliz = love.graphics.newImage('feliz_01.png')
 pet_roxo_feliz = love.graphics.newImage('feliz_02.png')
+
 --** Dependencias SUIT
 local suit = require 'suit'
 local utf8 = require 'utf8'
@@ -215,7 +216,7 @@ function verify_user(user_v, T)
     return true
 end
 
---** Faz o GET
+--** Faz o GET USUARIO
 function get_users()
     local ok = http.request {
         method = "GET",
@@ -226,6 +227,16 @@ function get_users()
     data = JSON:decode(data)
 end
 
+--** Faz o GET PETS
+function get_pets()
+    local ok = http.request {
+        method = "GET",
+        url = "http://localhost:3000/pets.json",
+        sink = collect
+    }
+
+    data = JSON:decode(data)
+end
 --** Faz o POST
 function post_user()
     user = {}
@@ -282,6 +293,69 @@ function cadastro()
     end
 
     return false
+end
+
+--** Função que cadastra um novo pet
+function cadastrar_pet()
+    get_pets()
+
+    local id_pet = #data + 1
+    print(id_pet)
+    pet = {}
+    pet["nome"] = form_nome_pet["text"]
+    pet["skin"] = 1
+
+    if pet1 == false then
+        pet["skin"] = 2
+    end
+
+    local payload = JSON:encode(pet)
+    local response_body = { }
+
+    local res, code, response_headers, status = http.request
+    {
+      url = "http://localhost:3000/pets.json",
+      method = "POST",
+      headers =
+      {
+        ["Authorization"] = "Maybe you need an Authorization header?",
+        ["Content-Type"] = "application/json",
+        ["Content-Length"] = payload:len()
+      },
+      source = ltn12.source.string(payload),
+      sink = ltn12.sink.table(response_body)
+    }
+
+    if code ~= 201 then
+        return false
+    end
+
+    user_pet = {}
+    user_pet["user_id"] = usuario_logado["id"]
+    user_pet["pet_id"] = id_pet
+
+    local payload = JSON:encode(user_pet)
+    local response_body = { }
+
+    local res, code, response_headers, status = http.request
+    {
+      url = "http://localhost:3000/user_pets.json",
+      method = "POST",
+      headers =
+      {
+        ["Authorization"] = "Maybe you need an Authorization header?",
+        ["Content-Type"] = "application/json",
+        ["Content-Length"] = payload:len()
+      },
+      source = ltn12.source.string(payload),
+      sink = ltn12.sink.table(response_body)
+    }
+
+    if code ~= 201 then
+        return false
+    end
+
+    return true   
 end
 
 -- Funcao do click do mouse
@@ -361,8 +435,16 @@ function love.mousepressed(x, y)
         if x >= 200 and x <= 400 and y >= 270 and y <= 270 + 200 then
             pet1 = false
         end
-        if x >= 75 and x <= 400 and y >= 270 and y <= 270 + 200 then
-            pet1 = false
+        if x >= 75 and x <= 75 + w and y >= 500 and y <= 500 + h then
+            if form_nome_pet["text"] ~= "" then
+                if cadastrar_pet() == true then
+                    form_nome_pet["text"] = ""
+                    pet1 = true
+                    ACTUAL_SCREEN = "LISTAGEM_SCREEN"
+                else
+                    form_nome_pet["text"] = "ERRO!"
+                end
+            end
         end
     end
 end

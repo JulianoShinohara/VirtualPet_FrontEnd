@@ -32,7 +32,7 @@ local ltn12 = require("ltn12")
     LISTAGEM_SCREEN
     GAME_SCREEN
 ]]
-local ACTUAL_SCREEN = "LOGGIN_SCREEN"
+local ACTUAL_SCREEN = "LISTAGEM_SCREEN"
 local usuario_logado = {}
 
 --** Variáveis do botão
@@ -172,8 +172,9 @@ function love.draw(dt)
         love.graphics.setColor(255, 255, 255)
         love.graphics.print("CADASTRAR NOVO PET", lt_x_b, y_b)
 
-        love.graphics.setColor(255, 0, 0)
+        --love.graphics.setColor(255, 0, 0);
         love.graphics.polygon("fill", 5, 575, 40, 595, 40, 555)
+
     end 
     if ACTUAL_SCREEN == "CADASTRO_PET_SCREEN" then
         love.graphics.draw(background_cadastro_pets)

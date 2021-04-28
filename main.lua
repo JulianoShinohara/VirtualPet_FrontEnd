@@ -30,10 +30,11 @@ local ltn12 = require("ltn12")
     CADASTRO_USUARIO_SCREEN
     CADASTRO_PET_SCREEN
     LISTAGEM_SCREEN
-    GAME_SCREEN
+    PET_SCREEN
 ]]
-local ACTUAL_SCREEN = "LISTAGEM_SCREEN"
+local ACTUAL_SCREEN = "LOGGIN_SCREEN"
 local usuario_logado = {}
+local pet_atual = {}
 
 --** Variáveis do botão
 --[[
@@ -66,8 +67,8 @@ local green = 195/255
 local blue = 195/255
 
 --** Inputs Texts
-local login_user = {text = "a"}
-local password_user = {text = "a"}
+local login_user = {text = ""}
+local password_user = {text = ""}
 local form_login_user = {text = ""}
 local form_password_user = {text = ""}
 local form_nome_pet = {text = ""}
@@ -154,6 +155,8 @@ function love.draw(dt)
         love.graphics.polygon("fill", 5, 580, 40, 600, 40, 560)
     end
     if ACTUAL_SCREEN == "LISTAGEM_SCREEN" then
+        update_qtd_pet()
+
         if qtd_pet == 0 then
             love.graphics.draw(background_listagem_0)
         elseif qtd_pet == 1 then
@@ -165,16 +168,15 @@ function love.draw(dt)
         else
             love.graphics.draw(background_listagem_4)
         end
-
+        
         love.graphics.setColor(0, 255, 0)
         love.graphics.rectangle("fill", x, y+200, w, h, border_radius)
-
+        
         love.graphics.setColor(255, 255, 255)
         love.graphics.print("CADASTRAR NOVO PET", lt_x_b, y_b)
 
-        --love.graphics.setColor(255, 0, 0);
+        --love.graphics.setColor(255, 0, 0)
         love.graphics.polygon("fill", 5, 575, 40, 595, 40, 555)
-
     end 
     if ACTUAL_SCREEN == "CADASTRO_PET_SCREEN" then
         love.graphics.draw(background_cadastro_pets)
@@ -193,6 +195,12 @@ function love.draw(dt)
 
         love.graphics.setColor(255, 255, 255)
         love.graphics.print("CADASTRAR", cs_x_b, cp_y_b)
+
+        --love.graphics.setColor(255, 0, 0)
+        love.graphics.polygon("fill", 5, 575, 40, 595, 40, 555)
+    end
+    if ACTUAL_SCREEN == "PET_SCREEN" then
+        love.graphics.draw(background_cadastro_pets)
     end
 end
 
@@ -234,6 +242,22 @@ function verify_user(user_v, T)
     return true
 end
 
+--** Pego o *index* pet do usuario
+function get_user_pet_by_index(T, index)
+    local flag = 0
+
+    for k, data in ipairs(T) do
+        if data["user_id"] == usuario_logado["id"] then
+            if flag == index then
+                return data["pet_id"]
+            end
+            flag = flag + 1
+        end
+    end
+
+    return false
+end
+
 --** Faz o GET USUARIO
 function get_users()
     local ok = http.request {
@@ -255,6 +279,29 @@ function get_pets()
 
     data = JSON:decode(data)
 end
+
+--** Faz o GET de um PET
+function get_pet(id)
+    local ok = http.request {
+        method = "GET",
+        url = "http://localhost:3000/pets/" .. id .. ".json",
+        sink = collect
+    }
+
+    pet_atual = JSON:decode(data)
+end
+
+--** Faz o GET USERS_PET
+function get_user_pets()
+    local ok = http.request {
+        method = "GET",
+        url = "http://localhost:3000/user_pets.json",
+        sink = collect
+    }
+
+    data = JSON:decode(data)
+end
+
 --** Faz o POST
 function post_user()
     user = {}
@@ -376,6 +423,36 @@ function cadastrar_pet()
     return true   
 end
 
+function update_qtd_pet()
+    get_user_pets()
+
+    local qtd = 0
+
+    for k, pets in ipairs(data) do
+        if pets["user_id"] == usuario_logado["id"] then
+            qtd = qtd + 1
+        end
+    end
+
+    if qtd > qtd_pet or qtd < qtd_pet then
+        qtd_pet = qtd
+    end
+end
+--** Funcao que pega o pet
+function pega_pet(index)
+    --** Pego o pet numero *index* do usuario
+    get_user_pets()
+
+    local id = get_user_pet_by_index(data, index)
+
+    if id ~= false then
+        get_pet(id)
+        return true
+    end
+
+    return false
+end
+
 -- Funcao do click do mouse
 function love.mousepressed(x, y)
     --** Se o cara estiver na tela de login
@@ -410,6 +487,8 @@ function love.mousepressed(x, y)
 
         --** Caso clique no botão de cadastrar
         if x >= button_x and x <= button_x + button_width and y >= (button_y + 50) and y <= (button_y + 50) + button_height then
+            login_user["text"] = ""
+            password_user["text"] = ""
             ACTUAL_SCREEN = "CADASTRO_USUARIO_SCREEN"
         end
     --** Se estiver na tela de cadastro
@@ -433,17 +512,55 @@ function love.mousepressed(x, y)
 
         end
         if x >= 5 and x <= 40 and y >= 560 and y <= 600 then
+            form_login_user["text"] = ""
+            form_password_user["text"] = ""
             ACTUAL_SCREEN = "LOGGIN_SCREEN"
         end
     
     --** Se estiver na tela de listagem
     elseif ACTUAL_SCREEN == "LISTAGEM_SCREEN" then
         if x >= button_x and x <= button_x + button_width and y >= button_y and y <= button_y + button_height then
-            ACTUAL_SCREEN = "CADASTRO_PET_SCREEN"
+            if qtd_pet <= 3 then
+                ACTUAL_SCREEN = "CADASTRO_PET_SCREEN"
+            end
         end
 
         if x >= 5 and x <= 40 and y >= 560 and y <= 600 then
+            login_user["text"] = ""
+            password_user["text"] = ""
             ACTUAL_SCREEN = "LOGGIN_SCREEN"
+        end
+
+        if x >= 79 and x <= 180 and y >= 150 and y <= 250 then
+            if qtd_pet > 0 then
+                if pega_pet(0) == true then
+                    ACTUAL_SCREEN = "PET_SCREEN"
+                end
+            end
+        end
+
+        if x >= 219 and x <= 320 and y >= 150 and y <= 250 then
+            if qtd_pet > 1 then
+                if pega_pet(1) == true then
+                    ACTUAL_SCREEN = "PET_SCREEN"
+                end
+            end
+        end
+
+        if x >= 79 and x <= 180 and y >= 279 and y <= 379 then
+            if qtd_pet > 2 then
+                if pega_pet(2) == true then
+                    ACTUAL_SCREEN = "PET_SCREEN"
+                end
+            end
+        end
+
+        if x >= 219 and x <= 320 and y >= 279 and y <= 379 then
+            if qtd_pet > 3 then
+                if pega_pet(3) == true then
+                    ACTUAL_SCREEN = "PET_SCREEN"
+                end
+            end
         end
     --** Se estiver na tela de cadastro de pet
     elseif ACTUAL_SCREEN == "CADASTRO_PET_SCREEN" then
@@ -465,6 +582,11 @@ function love.mousepressed(x, y)
             else
                 form_nome_pet["text"] = "ERRO!"
             end
+        end
+        if x >= 5 and x <= 40 and y >= 560 and y <= 600 then
+            form_nome_pet["text"] = ""
+            pet1 = true
+            ACTUAL_SCREEN = "LISTAGEM_SCREEN"
         end
     end
 end

@@ -300,7 +300,7 @@ function cadastrar_pet()
     get_pets()
 
     local id_pet = #data + 1
-    print(id_pet)
+    
     pet = {}
     pet["nome"] = form_nome_pet["text"]
     pet["skin"] = 1

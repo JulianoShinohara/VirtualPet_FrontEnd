@@ -1,6 +1,14 @@
 --** Backgrounds
 background_login = love.graphics.newImage('login_screen.png')
 background_cadastro = love.graphics.newImage('cadastro_screen.png')
+background_listagem_0 = love.graphics.newImage('nenhumPet.png')
+background_listagem_1 = love.graphics.newImage('onePet.png')
+background_listagem_2 = love.graphics.newImage('twoPet.png')
+background_listagem_3 = love.graphics.newImage('threePet.png')
+background_listagem_4 = love.graphics.newImage('fourPet.png')
+background_cadastro_pets = love.graphics.newImage('Logo.png')
+
+--** PETS images
 pet_amarelo = love.graphics.newImage('amarelo.png')
 pet_roxo = love.graphics.newImage('roxo.png')
 pet_amarelo_feliz = love.graphics.newImage('feliz_01.png')
@@ -24,7 +32,7 @@ local ltn12 = require("ltn12")
     LISTAGEM_SCREEN
     GAME_SCREEN
 ]]
-local ACTUAL_SCREEN = "LISTAGEM_SCREEN"
+local ACTUAL_SCREEN = "LOGGIN_SCREEN"
 local usuario_logado = {}
 
 --** Variáveis do botão
@@ -58,8 +66,8 @@ local green = 195/255
 local blue = 195/255
 
 --** Inputs Texts
-local login_user = {text = "c"}
-local password_user = {text = "c"}
+local login_user = {text = "a"}
+local password_user = {text = "a"}
 local form_login_user = {text = ""}
 local form_password_user = {text = ""}
 local form_nome_pet = {text = ""}
@@ -69,6 +77,11 @@ local button = {}
     VARIÁVEIS TELA DE CADASTRO DE PET
 ]]
 local pet1 = true
+
+--[[
+    VARIÁVEIS TELA DE lISTAGEM DE PET
+]]
+local qtd_pet = 0
 
 --** Funcao que coleta o retorno das requisições
 local function collect(chunk)
@@ -119,12 +132,9 @@ end
 function love.draw(dt)
     if ACTUAL_SCREEN == "LOGGIN_SCREEN" then
         love.graphics.draw(background_login)
-        love.graphics.setBackgroundColor(red, green, blue, 0)
         suit.draw()
 
         love.graphics.setColor(0, 255, 0)
-        -- botao:
-        --suit.Button(button, x, y+200, w, h)
         love.graphics.rectangle("fill", x, y+200, w, h, border_radius)
 
         love.graphics.setColor(255, 255, 255)
@@ -132,12 +142,9 @@ function love.draw(dt)
     end
     if ACTUAL_SCREEN == "CADASTRO_USUARIO_SCREEN" then
         love.graphics.draw(background_cadastro)
-        love.graphics.setBackgroundColor(red, green, blue, 0)
         suit.draw()
 
         love.graphics.setColor(0, 255, 0)
-        -- botao:
-        --suit.Button(button, x, y+200, w, h)
         love.graphics.rectangle("fill", x, y+200, w, h, border_radius)
         
         love.graphics.setColor(255, 255, 255)
@@ -147,7 +154,17 @@ function love.draw(dt)
         love.graphics.polygon("fill", 5, 580, 40, 600, 40, 560)
     end
     if ACTUAL_SCREEN == "LISTAGEM_SCREEN" then
-        love.graphics.setBackgroundColor(red, green, blue, 0)
+        if qtd_pet == 0 then
+            love.graphics.draw(background_listagem_0)
+        elseif qtd_pet == 1 then
+            love.graphics.draw(background_listagem_1)
+        elseif qtd_pet == 2 then
+            love.graphics.draw(background_listagem_2)
+        elseif qtd_pet == 3 then
+            love.graphics.draw(background_listagem_3)
+        else
+            love.graphics.draw(background_listagem_4)
+        end
 
         love.graphics.setColor(0, 255, 0)
         love.graphics.rectangle("fill", x, y+200, w, h, border_radius)
@@ -159,7 +176,7 @@ function love.draw(dt)
         love.graphics.polygon("fill", 5, 575, 40, 595, 40, 555)
     end 
     if ACTUAL_SCREEN == "CADASTRO_PET_SCREEN" then
-        love.graphics.setBackgroundColor(red, green, blue, 0)
+        love.graphics.draw(background_cadastro_pets)
         suit.draw()
 
         if pet1 == true then
@@ -300,7 +317,7 @@ function cadastrar_pet()
     get_pets()
 
     local id_pet = #data + 1
-    
+
     pet = {}
     pet["nome"] = form_nome_pet["text"]
     pet["skin"] = 1
@@ -444,6 +461,8 @@ function love.mousepressed(x, y)
                 else
                     form_nome_pet["text"] = "ERRO!"
                 end
+            else
+                form_nome_pet["text"] = "ERRO!"
             end
         end
     end

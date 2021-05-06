@@ -41,6 +41,7 @@ local ltn12 = require("ltn12")
 local ACTUAL_SCREEN = "LOGGIN_SCREEN"
 local usuario_logado = {}
 local pet_atual = {}
+local actual_user_pet = {}
 
 --** Variáveis do botão
 --[[
@@ -305,10 +306,10 @@ end
 
 function verifica_estado()
     if state_pet == 0 then
-        if (pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and pet_atual["healthy"] < 50 then
-            pet_atual[""]
-        elseif (pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"]) then
-            pet_atual[""]
+        if ((pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and (pet_atual["healthy"] < 50)) then
+            --pet_atual["a"] = 1
+        elseif ((pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"])) then
+            --pet_atual["b"] = 2
         end
        --pet_atual["helthy"] pet_atual["happiness"] pet_atual["hungry"] pet_atual["clean"]
     else
@@ -355,6 +356,9 @@ function get_user_pet_by_index(T, index)
     for k, data in ipairs(T) do
         if data["user_id"] == usuario_logado["id"] then
             if flag == index then
+                actual_user_pet["id"] = data["id"]
+                actual_user_pet["user_id"] = data["user_id"]
+                actual_user_pet["pet_id"] = data["pet_id"]
                 return data["pet_id"]
             end
             flag = flag + 1
@@ -569,6 +573,53 @@ function pega_pet(index)
     return false
 end
 
+--** funcao que deleta o pet
+function delete_pet()
+    local payload = JSON:encode(actual_user_pet)
+    local response_body = { }
+
+    local res, code, response_headers, status = http.request
+    {
+      url = "http://localhost:3000/user_pets/" .. actual_user_pet["id"] .. ".json",
+      method = "DELETE",
+      headers =
+      {
+        ["Authorization"] = "Maybe you need an Authorization header?",
+        ["Content-Type"] = "application/json",
+        ["Content-Length"] = payload:len()
+      },
+      source = ltn12.source.string(payload),
+      sink = ltn12.sink.table(response_body)
+    }
+    
+    if code ~= 204
+        return false
+    end
+
+    local payload = JSON:encode(pet_atual)
+    local response_body = { }
+
+    local res, code, response_headers, status = http.request
+    {
+      url = "http://localhost:3000/pets/" .. pet_atual["id"] .. ".json",
+      method = "DELETE",
+      headers =
+      {
+        ["Authorization"] = "Maybe you need an Authorization header?",
+        ["Content-Type"] = "application/json",
+        ["Content-Length"] = payload:len()
+      },
+      source = ltn12.source.string(payload),
+      sink = ltn12.sink.table(response_body)
+    }
+
+    if code ~= 204
+        return false
+    end
+
+    return true
+end
+
 --** funcao que seta o rating
 function seting_rating(flag)
     if flag == 1 then
@@ -728,6 +779,13 @@ function love.mousepressed(x, y)
             light = true
             dead = false 
             ACTUAL_SCREEN = "LISTAGEM_SCREEN"
+        end
+        --** EXCLUIR
+        if  x >= 376 and x <= (376 + 23) and y >= 4 and y <= (4 + 20) then
+            if delete_pet() == true then
+                update_qtd_pet()
+                ACTUAL_SCREEN = "LISTAGEM_SCREEN"
+            end
         end
         if dead == false then
             --** COMER

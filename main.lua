@@ -7,12 +7,18 @@ background_listagem_2 = love.graphics.newImage('twoPet.png')
 background_listagem_3 = love.graphics.newImage('threePet.png')
 background_listagem_4 = love.graphics.newImage('fourPet.png')
 background_cadastro_pets = love.graphics.newImage('Logo.png')
+background_pets = love.graphics.newImage('game_screen.png')
+background_pets_dark = love.graphics.newImage('game_screen_dark.png')
 
 --** PETS images
 pet_amarelo = love.graphics.newImage('amarelo.png')
 pet_roxo = love.graphics.newImage('roxo.png')
 pet_amarelo_feliz = love.graphics.newImage('feliz_01.png')
 pet_roxo_feliz = love.graphics.newImage('feliz_02.png')
+pet_amarelo_dormindo =  love.graphics.newImage('dormindo_01.png')
+pet_roxo_dormindo =  love.graphics.newImage('dormindo_02.png')
+pet_amarelo_morto =  love.graphics.newImage('morto_01.png')
+pet_roxo_morto =  love.graphics.newImage('morto_02.png')
 
 --** Dependencias SUIT
 local suit = require 'suit'
@@ -49,6 +55,12 @@ local ls_x_b = 175
 local cs_x_b = 165
 local lt_x_b = 130
 
+--** Variáveis do pet
+local font_x
+local font_y
+--local pet_x
+--local pet_y
+
 --** Variáveis inputs
 local button_x = 75
 local button_y = 400
@@ -83,6 +95,20 @@ local pet1 = true
     VARIÁVEIS TELA DE lISTAGEM DE PET
 ]]
 local qtd_pet = 0
+
+--[[
+    VARIÁVEIS TELA DO PET
+]]
+local light = true
+local dead = false 
+
+local healthRate =  0.05
+local happyRate = 0.07
+local hungerRate = 0.09
+local sleepRate = 0.075
+local cleanRate = 0.025
+
+local state_pet = 400
 
 --** Funcao que coleta o retorno das requisições
 local function collect(chunk)
@@ -129,6 +155,10 @@ function love.update(dt)
     end
 end
 
+local align = "center"
+local default = love.graphics.newFont(30)
+local norm = love.graphics.newFont(13)
+local test = 5
 --** Desenha na tela
 function love.draw(dt)
     if ACTUAL_SCREEN == "LOGGIN_SCREEN" then
@@ -155,7 +185,7 @@ function love.draw(dt)
         love.graphics.polygon("fill", 5, 580, 40, 600, 40, 560)
     end
     if ACTUAL_SCREEN == "LISTAGEM_SCREEN" then
-        update_qtd_pet()
+        update_qtd_pet() 
 
         if qtd_pet == 0 then
             love.graphics.draw(background_listagem_0)
@@ -200,7 +230,49 @@ function love.draw(dt)
         love.graphics.polygon("fill", 5, 575, 40, 595, 40, 555)
     end
     if ACTUAL_SCREEN == "PET_SCREEN" then
-        love.graphics.draw(background_cadastro_pets)
+        if light == true then
+            love.graphics.draw(background_pets)
+        elseif light == false then
+            love.graphics.draw(background_pets_dark)
+        end
+
+        if pet_atual["atual_state"] == "STATE_NORMAL" then
+            if pet_atual["skin"] == 1 then
+                love.graphics.draw(pet_amarelo_feliz, 135, 200)
+            elseif pet_atual["skin"] == 2 then
+                love.graphics.draw(pet_roxo_feliz, 135, 200)
+            end
+        elseif pet_atual["atual_state"] == "STATE_SLEEP" then
+            if pet_atual["skin"] == 1 then
+                love.graphics.draw(pet_amarelo_dormindo, 135, 200)
+            elseif pet_atual["skin"] == 2 then
+                love.graphics.draw(pet_roxo_dormindo, 135, 200)
+            end
+        elseif pet_atual["atual_state"] == "STATE_DEAD" then
+            if pet_atual["skin"] == 1 then
+                love.graphics.draw(pet_amarelo_morto, 135, 200)
+            elseif pet_atual["skin"] == 2 then
+                love.graphics.draw(pet_roxo_morto, 135, 200)
+            end
+        end
+
+        love.graphics.setFont(default)
+        love.graphics.setColor(0, 0, 0)
+        love.graphics.print(pet_atual["nome"], 91, 52)
+        
+        love.graphics.setFont(norm)
+        love.graphics.print(math.ceil(pet_atual["helthy"]) .. "%", 40, 157)
+        love.graphics.print(math.ceil(pet_atual["happiness"]) .. "%", 40, 210)
+        love.graphics.print(math.ceil(pet_atual["hungry"]) .. "%", 40, 273)
+        love.graphics.print(math.ceil(pet_atual["sleep"]) .. "%", 40, 333)
+        love.graphics.print(math.ceil(pet_atual["clean"]) .. "%", 40, 393)
+
+        love.graphics.setColor(255, 255, 255)
+        love.graphics.polygon("fill", 5, 465, 40, 485, 40, 445)
+
+        if dead == false then
+            motor_jogo()
+        end
     end
 end
 
@@ -229,6 +301,40 @@ function verify_login(login, senha, T)
     end
 
     return false
+end
+
+function verifica_estado()
+    if state_pet == 0 then
+        if (pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and pet_atual["healthy"] < 50 then
+            pet_atual[""]
+        elseif (pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"]) then
+            pet_atual[""]
+        end
+       --pet_atual["helthy"] pet_atual["happiness"] pet_atual["hungry"] pet_atual["clean"]
+    else
+        state_pet = state_pet - 1
+    end
+end
+
+--** Motor do jogo Acesso
+function motor_jogo()
+    pet_atual["helthy"] = ((pet_atual["helthy"] - healthRate) <= 0 and 0 or (pet_atual["helthy"] - healthRate))
+    pet_atual["happiness"] = ((pet_atual["happiness"] - happyRate) <= 0 and 0 or (pet_atual["happiness"] - happyRate))
+    pet_atual["hungry"] = ((pet_atual["hungry"] - hungerRate) <= 0 and 0 or (pet_atual["hungry"] - hungerRate))
+    pet_atual["clean"] = ((pet_atual["clean"] - cleanRate) <= 0 and 0 or (pet_atual["clean"] - cleanRate))
+    
+    if light == true then
+        pet_atual["sleep"] = ((pet_atual["sleep"] - sleepRate) <= 0 and 0 or (pet_atual["sleep"] - sleepRate))
+    elseif light == false then
+        pet_atual["sleep"] = ((pet_atual["sleep"] + sleepRate) >= 100 and 100 or (pet_atual["sleep"] + sleepRate))
+    end
+    
+    if pet_atual["helthy"] == 0 or pet_atual["happiness"] == 0 or pet_atual["hungry"] == 0 or pet_atual["sleep"] == 0 or pet_atual["clean"] == 0 then
+        pet_atual["atual_state"] = "STATE_DEAD"
+        dead = true
+    end
+
+    verifica_estado()
 end
 
 --** Verifico se o login já existe
@@ -332,7 +438,7 @@ function post_user()
     return true
 end
 
---** Função loguin
+--** Função login
 function login()
     get_users()
     --print("login:           ", login_user["text"])
@@ -447,10 +553,37 @@ function pega_pet(index)
 
     if id ~= false then
         get_pet(id)
+        if pet_atual["atual_state"] == "STATE_DEAD" then
+            dead = true 
+        else
+            dead = false
+        end
+        if pet_atual["atual_state"] == "STATE_SLEEP" then
+            sleep = true
+        else
+            sleep = false
+        end
         return true
     end
 
     return false
+end
+
+--** funcao que seta o rating
+function seting_rating(flag)
+    if flag == 1 then
+        healthRate =  0.05
+        happyRate = 0.07
+        hungerRate = 0.09
+        sleepRate = 0.075
+        cleanRate = 0.025    
+    elseif flag == 2 then
+        healthRate =  0.1
+        happyRate = 0.14
+        hungerRate = 0.18
+        sleepRate = 0.4
+        cleanRate = 0.05
+    end
 end
 
 -- Funcao do click do mouse
@@ -587,6 +720,101 @@ function love.mousepressed(x, y)
             form_nome_pet["text"] = ""
             pet1 = true
             ACTUAL_SCREEN = "LISTAGEM_SCREEN"
+        end
+    --** Se estiver na tela do pet
+    elseif ACTUAL_SCREEN == "PET_SCREEN" then
+        if x >= 5 and x <= 40 and y >= 435 and y <= 470 then
+            seting_rating(1)
+            light = true
+            dead = false 
+            ACTUAL_SCREEN = "LISTAGEM_SCREEN"
+        end
+        if dead == false then
+            --** COMER
+            if x >= 6 and x <= (6 + 69) and y >= 512 and y <= (512 + 70) then
+                if light == true then
+                    if pet_atual["hungry"] <= 75 then
+                        pet_atual["helthy"] = ((pet_atual["helthy"] + 1) >= 100 and 100 or (pet_atual["helthy"] + 1))
+                        pet_atual["happiness"] = ((pet_atual["happiness"] + 10) >= 100 and 100 or (pet_atual["happiness"] + 10))
+                        pet_atual["hungry"] = ((pet_atual["hungry"] + 15)  >= 100 and 100 or (pet_atual["hungry"] + 15))
+                        pet_atual["clean"] = pet_atual["clean"] - 15
+                    elseif pet_atual["hungry"] >= 100 then
+                        pet_atual["helthy"] = pet_atual["helthy"] - 1
+                        pet_atual["hungry"] = 100
+                    else
+                        pet_atual["hungry"] = ((pet_atual["hungry"] + 15)  >= 100 and 100 or (pet_atual["hungry"] + 15))
+                    end
+                end
+            end
+            --** LAVAR
+            if x >= 86 and x <= (86 + 69) and y >= 512 and y <= (512 + 70) then
+                if light == true then
+                    if pet_atual["clean"] < 75 then
+                        pet_atual["helthy"] = ((pet_atual["helthy"] + 40) >= 100 and 100 or (pet_atual["helthy"] + 40))
+                        pet_atual["happiness"] = ((pet_atual["happiness"] + 10) >= 100 and 100 or (pet_atual["happiness"] + 10))
+                        pet_atual["hungry"] = pet_atual["hungry"] - 5 
+                        pet_atual["clean"] = 100
+                        pet_atual["sleep"] = pet_atual["sleep"] - 3
+                    elseif pet_atual["clean"] >= 100 then
+                        pet_atual["clean"] = 100
+                        pet_atual["sleep"] = pet_atual["sleep"] - 3
+                        pet_atual["hungry"] = pet_atual["hungry"] - 5 
+                    else
+                        pet_atual["clean"] = ((pet_atual["clean"] + 1) >= 100 and 100 or (pet_atual["clean"] + 1))
+                    end
+                end
+            end
+            --** VACINAR
+            if x >= 164 and x <= (164 + 69) and y >= 512 and y <= (512 + 70) then
+                if light == true then
+                    if pet_atual["helthy"] <= 50 then
+                        pet_atual["helthy"] = ((pet_atual["helthy"] + 40) >= 100 and 100 or (pet_atual["helthy"] + 40))
+                        pet_atual["happiness"] = pet_atual["happiness"] - 15
+                        pet_atual["hungry"] = pet_atual["hungry"] - 5 
+                        pet_atual["clean"] = pet_atual["clean"] - 10
+                        pet_atual["sleep"] = pet_atual["sleep"] - 3
+                    elseif pet_atual["helthy"] >= 100 then
+                        pet_atual["helthy"] = 100
+                        pet_atual["sleep"] = pet_atual["sleep"] - 5
+                    else
+                        pet_atual["helthy"] = ((pet_atual["helthy"] + 40) >= 100 and 100 or (pet_atual["helthy"] + 40))
+                    end
+                end
+            end
+            --** BRINCAR
+            if x >= 247 and x <= (247 + 69) and y >= 512 and y <= (512 + 70) then
+                if light == true then
+                    if pet_atual["happiness"] <= 75 then
+                        pet_atual["helthy"] = ((pet_atual["helthy"] + 1) >= 100 and 100 or (pet_atual["helthy"] + 1))
+                        pet_atual["happiness"] = ((pet_atual["happiness"] + 15) >= 100 and 100 or (pet_atual["happiness"] + 15))
+                        pet_atual["hungry"] = pet_atual["hungry"] - 5 
+                        pet_atual["clean"] = pet_atual["clean"] - 15
+                        pet_atual["sleep"] = pet_atual["sleep"] - 3
+                    elseif pet_atual["happiness"] >= 100 then
+                        pet_atual["hungry"] = pet_atual["hungry"] - 5 
+                        pet_atual["clean"] = pet_atual["clean"] - 15
+                        pet_atual["sleep"] = pet_atual["sleep"] - 3
+                        pet_atual["happiness"] = 100
+                    else
+                        pet_atual["happiness"] = ((pet_atual["happiness"] + 1) >= 100 and 100 or (pet_atual["happiness"] + 1))
+                    end
+                end
+            end
+            --** DORMIR
+            if x >= 337 and x <= (337 + 69) and y >= 512 and y <= (512 + 70) then
+                if light == true then
+                    light = false
+                    seting_rating(2)
+                    pet_atual["atual_state"] = "STATE_SLEEP"
+                    pet_atual["sleep"] = ((pet_atual["sleep"] + 15) >= 100 and 100 or (pet_atual["sleep"] + 1))
+                elseif light == false then
+                    light = true
+                    seting_rating(1)
+                    -- get estado atual pet
+                    pet_atual["atual_state"] = "STATE_NORMAL"
+                end
+
+            end
         end
     end
 end

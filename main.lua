@@ -35,6 +35,9 @@ pet_roxo_sono = love.graphics.newImage('sono_02.png')
 pet_amarelo_sujo = love.graphics.newImage('sujo_01.png')
 pet_roxo_sujo = love.graphics.newImage('sujo_02.png')
 
+pet_amarelo_sono = love.graphics.newImage('sono_01.png')
+pet_roxo_sono = love.graphics.newImage('sono_02.png')
+
 --** Dependencias SUIT
 local suit = require 'suit'
 local utf8 = require 'utf8'
@@ -57,6 +60,7 @@ local ACTUAL_SCREEN = "LOGGIN_SCREEN"
 local usuario_logado = {}
 local pet_atual = {}
 local actual_user_pet = {}
+local att = 0
 
 --** Variáveis do botão
 --[[
@@ -124,7 +128,7 @@ local hungerRate = 0.09
 local sleepRate = 0.075
 local cleanRate = 0.025
 
-local state_pet = 400
+local state_pet = 200
 
 --** Funcao que coleta o retorno das requisições
 local function collect(chunk)
@@ -270,7 +274,7 @@ function love.draw(dt)
             elseif pet_atual["skin"] == 2 then
                 love.graphics.draw(pet_roxo_morto, 135, 200)
             end
-        --[[elseif pet_atual["atual_state"] == "STATE_SICK" then
+        elseif pet_atual["atual_state"] == "STATE_SICK" then
             if pet_atual["skin"] == 1 then
                 love.graphics.draw(pet_amarelo_doente, 135, 200)
             elseif pet_atual["skin"] == 2 then
@@ -287,7 +291,13 @@ function love.draw(dt)
                 love.graphics.draw(pet_amarelo_sujo, 135, 200)
             elseif pet_atual["skin"] == 2 then
                 love.graphics.draw(pet_roxo_sujo, 135, 200)
-            end]]
+            end
+        elseif pet_atual["atual_state"] == "STATE_TIRED" then
+            if pet_atual["skin"] == 1 then
+                love.graphics.draw(pet_amarelo_sono, 135, 200)
+            elseif pet_atual["skin"] == 2 then
+                love.graphics.draw(pet_roxo_sono, 135, 200)
+            end
         end
 
         love.graphics.setFont(default)
@@ -342,7 +352,7 @@ end
 
 function verifica_estado()
     if state_pet == 0 then
-        if (pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and pet_atual["healthy"] < 50 then
+        if (pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and pet_atual["helthy"] < 50 then
             pet_atual["atual_state"] = "STATE_SICK"
         elseif (pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"]) and pet_atual["happiness"] < 50 then
             pet_atual["atual_state"] = "STATE_NORMAL"
@@ -350,7 +360,10 @@ function verifica_estado()
             pet_atual["atual_state"] = "STATE_HUNGRY"
         elseif (pet_atual["clean"] < pet_atual["helthy"]) and (pet_atual["clean"] < pet_atual["hungry"]) and (pet_atual["clean"] < pet_atual["happiness"]) and pet_atual["clean"] < 50 then
             pet_atual["atual_state"] = "STATE_CLEAN"
+        elseif (pet_atual["sleep"] < pet_atual["helthy"]) and (pet_atual["sleep"] < pet_atual["hungry"]) and (pet_atual["sleep"] < pet_atual["happiness"]) and pet_atual["sleep"] < 50 then
+            pet_atual["atual_state"] = "STATE_TIRED"
         end
+        state_pet = 200
     else
         state_pet = state_pet - 1
     end
@@ -512,9 +525,7 @@ end
 --** Função que cadastra um novo pet
 function cadastrar_pet()
     get_pets()
-
-    local id_pet = #data + 1
-
+    
     pet = {}
     pet["nome"] = form_nome_pet["text"]
     pet["skin"] = 1
@@ -544,9 +555,11 @@ function cadastrar_pet()
         return false
     end
 
+    att = att + 1
+
     user_pet = {}
     user_pet["user_id"] = usuario_logado["id"]
-    user_pet["pet_id"] = id_pet
+    user_pet["pet_id"] = att
 
     local payload = JSON:encode(user_pet)
     local response_body = { }
@@ -631,7 +644,7 @@ function delete_pet()
       sink = ltn12.sink.table(response_body)
     }
     
-    if code ~= 204
+    if code ~= 204 then
         return false
     end
 
@@ -652,7 +665,7 @@ function delete_pet()
       sink = ltn12.sink.table(response_body)
     }
 
-    if code ~= 204
+    if code ~= 204 then
         return false
     end
 
@@ -847,7 +860,7 @@ function love.mousepressed(x, y)
             if x >= 86 and x <= (86 + 69) and y >= 512 and y <= (512 + 70) then
                 if light == true then
                     if pet_atual["clean"] < 75 then
-                        pet_atual["helthy"] = ((pet_atual["helthy"] + 40) >= 100 and 100 or (pet_atual["helthy"] + 40))
+                        pet_atual["helthy"] = ((pet_atual["helthy"] + 20) >= 100 and 100 or (pet_atual["helthy"] + 40))
                         pet_atual["happiness"] = ((pet_atual["happiness"] + 10) >= 100 and 100 or (pet_atual["happiness"] + 10))
                         pet_atual["hungry"] = pet_atual["hungry"] - 5 
                         pet_atual["clean"] = 100

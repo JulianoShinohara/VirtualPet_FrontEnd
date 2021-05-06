@@ -13,12 +13,27 @@ background_pets_dark = love.graphics.newImage('game_screen_dark.png')
 --** PETS images
 pet_amarelo = love.graphics.newImage('amarelo.png')
 pet_roxo = love.graphics.newImage('roxo.png')
+
 pet_amarelo_feliz = love.graphics.newImage('feliz_01.png')
 pet_roxo_feliz = love.graphics.newImage('feliz_02.png')
+
 pet_amarelo_dormindo =  love.graphics.newImage('dormindo_01.png')
 pet_roxo_dormindo =  love.graphics.newImage('dormindo_02.png')
+
 pet_amarelo_morto =  love.graphics.newImage('morto_01.png')
 pet_roxo_morto =  love.graphics.newImage('morto_02.png')
+
+pet_amarelo_doente = love.graphics.newImage('doente_01.png')
+pet_roxo_doente = love.graphics.newImage('doente_02.png')
+
+pet_amarelo_fome = love.graphics.newImage('fome_01.png')
+pet_roxo_fome = love.graphics.newImage('fome_02.png')
+
+pet_amarelo_sono = love.graphics.newImage('sono_01.png')
+pet_roxo_sono = love.graphics.newImage('sono_02.png')
+
+pet_amarelo_sujo = love.graphics.newImage('sujo_01.png')
+pet_roxo_sujo = love.graphics.newImage('sujo_02.png')
 
 --** Dependencias SUIT
 local suit = require 'suit'
@@ -254,6 +269,24 @@ function love.draw(dt)
             elseif pet_atual["skin"] == 2 then
                 love.graphics.draw(pet_roxo_morto, 135, 200)
             end
+        --[[elseif pet_atual["atual_state"] == "STATE_SICK" then
+            if pet_atual["skin"] == 1 then
+                love.graphics.draw(pet_amarelo_doente, 135, 200)
+            elseif pet_atual["skin"] == 2 then
+                love.graphics.draw(pet_roxo_doente, 135, 200)
+            end
+        elseif pet_atual["atual_state"] == "STATE_HUNGRY" then
+            if pet_atual["skin"] == 1 then
+                love.graphics.draw(pet_amarelo_fome, 135, 200)
+            elseif pet_atual["skin"] == 2 then
+                love.graphics.draw(pet_roxo_fome, 135, 200)
+            end
+        elseif pet_atual["atual_state"] == "STATE_CLEAN" then
+            if pet_atual["skin"] == 1 then
+                love.graphics.draw(pet_amarelo_sujo, 135, 200)
+            elseif pet_atual["skin"] == 2 then
+                love.graphics.draw(pet_roxo_sujo, 135, 200)
+            end]]
         end
 
         love.graphics.setFont(default)
@@ -274,6 +307,8 @@ function love.draw(dt)
             motor_jogo()
         end
     end
+
+
 end
 
 --** TextInput
@@ -303,14 +338,18 @@ function verify_login(login, senha, T)
     return false
 end
 
+
 function verifica_estado()
     if state_pet == 0 then
         if (pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and pet_atual["healthy"] < 50 then
-            pet_atual[""]
-        elseif (pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"]) then
-            pet_atual[""]
+            pet_atual["atual_state"] = "STATE_SICK"
+        elseif (pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"]) and pet_atual["happiness"] < 50 then
+            pet_atual["atual_state"] = "STATE_NORMAL"
+        elseif (pet_atual["hungry"] < pet_atual["helthy"]) and (pet_atual["hungry"] < pet_atual["happiness"]) and (pet_atual["hungry"] < pet_atual["clean"]) and pet_atual["hungry"] < 50 then
+            pet_atual["atual_state"] = "STATE_HUNGRY"
+        elseif (pet_atual["clean"] < pet_atual["helthy"]) and (pet_atual["clean"] < pet_atual["hungry"]) and (pet_atual["clean"] < pet_atual["happiness"]) and pet_atual["clean"] < 50 then
+            pet_atual["atual_state"] = "STATE_CLEAN"
         end
-       --pet_atual["helthy"] pet_atual["happiness"] pet_atual["hungry"] pet_atual["clean"]
     else
         state_pet = state_pet - 1
     end

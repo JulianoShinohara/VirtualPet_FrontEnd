@@ -6,7 +6,7 @@ background_listagem_1 = love.graphics.newImage('onePet.png')
 background_listagem_2 = love.graphics.newImage('twoPet.png')
 background_listagem_3 = love.graphics.newImage('threePet.png')
 background_listagem_4 = love.graphics.newImage('fourPet.png')
-background_cadastro_pets = love.graphics.newImage('Logo.png')
+background_cadastro_pets = love.graphics.newImage('cadastro_pet_screen.png')
 background_pets = love.graphics.newImage('game_screen.png')
 background_pets_dark = love.graphics.newImage('game_screen_dark.png')
 
@@ -269,7 +269,7 @@ function love.draw(dt)
             if light == true then
                 light = false
             end
-            
+
             if pet_atual["skin"] == 1 then
                 love.graphics.draw(pet_amarelo_dormindo, 135, 200)
             elseif pet_atual["skin"] == 2 then

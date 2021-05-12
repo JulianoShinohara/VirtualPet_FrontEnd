@@ -59,8 +59,8 @@ local ltn12 = require("ltn12")
 local ACTUAL_SCREEN = "LOGGIN_SCREEN"
 local usuario_logado = {}
 local pet_atual = {}
-local actual_user_pet = {}
 local att = 0
+local qnt_pet = 0
 
 --** Variáveis do botão
 --[[
@@ -128,7 +128,7 @@ local hungerRate = 0.09
 local sleepRate = 0.075
 local cleanRate = 0.025
 
-local state_pet = 200
+local state_pet = 100
 
 --** Funcao que coleta o retorno das requisições
 local function collect(chunk)
@@ -179,6 +179,7 @@ local align = "center"
 local default = love.graphics.newFont(30)
 local norm = love.graphics.newFont(13)
 local test = 5
+
 --** Desenha na tela
 function love.draw(dt)
     if ACTUAL_SCREEN == "LOGGIN_SCREEN" then
@@ -205,8 +206,10 @@ function love.draw(dt)
         love.graphics.polygon("fill", 5, 580, 40, 600, 40, 560)
     end
     if ACTUAL_SCREEN == "LISTAGEM_SCREEN" then
-        update_qtd_pet() 
-
+        if qtd_pet < 4 then
+            update_qtd_pet() 
+        end
+        
         if qtd_pet == 0 then
             love.graphics.draw(background_listagem_0)
         elseif qtd_pet == 1 then
@@ -263,6 +266,10 @@ function love.draw(dt)
                 love.graphics.draw(pet_roxo_feliz, 135, 200)
             end
         elseif pet_atual["atual_state"] == "STATE_SLEEP" then
+            if light == true then
+                light = false
+            end
+            
             if pet_atual["skin"] == 1 then
                 love.graphics.draw(pet_amarelo_dormindo, 135, 200)
             elseif pet_atual["skin"] == 2 then
@@ -352,21 +359,45 @@ end
 
 function verifica_estado()
     if state_pet == 0 then
-        if (pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and pet_atual["helthy"] < 50 then
-            pet_atual["atual_state"] = "STATE_SICK"
-        elseif (pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"]) and pet_atual["happiness"] < 50 then
-            pet_atual["atual_state"] = "STATE_NORMAL"
-        elseif (pet_atual["hungry"] < pet_atual["helthy"]) and (pet_atual["hungry"] < pet_atual["happiness"]) and (pet_atual["hungry"] < pet_atual["clean"]) and pet_atual["hungry"] < 50 then
-            pet_atual["atual_state"] = "STATE_HUNGRY"
-        elseif (pet_atual["clean"] < pet_atual["helthy"]) and (pet_atual["clean"] < pet_atual["hungry"]) and (pet_atual["clean"] < pet_atual["happiness"]) and pet_atual["clean"] < 50 then
-            pet_atual["atual_state"] = "STATE_CLEAN"
-        elseif (pet_atual["sleep"] < pet_atual["helthy"]) and (pet_atual["sleep"] < pet_atual["hungry"]) and (pet_atual["sleep"] < pet_atual["happiness"]) and pet_atual["sleep"] < 50 then
-            pet_atual["atual_state"] = "STATE_TIRED"
+        if light == true then
+            if (pet_atual["helthy"] < pet_atual["happiness"]) and (pet_atual["helthy"] < pet_atual["hungry"]) and (pet_atual["helthy"] < pet_atual["clean"]) and pet_atual["helthy"] < 50 then
+                pet_atual["atual_state"] = "STATE_SICK"
+            elseif (pet_atual["happiness"] < pet_atual["helthy"]) and (pet_atual["happiness"] < pet_atual["hungry"]) and (pet_atual["happiness"] < pet_atual["clean"]) and pet_atual["happiness"] < 50 then
+                pet_atual["atual_state"] = "STATE_NORMAL"
+            elseif (pet_atual["hungry"] < pet_atual["helthy"]) and (pet_atual["hungry"] < pet_atual["happiness"]) and (pet_atual["hungry"] < pet_atual["clean"]) and pet_atual["hungry"] < 50 then
+                pet_atual["atual_state"] = "STATE_HUNGRY"
+            elseif (pet_atual["clean"] < pet_atual["helthy"]) and (pet_atual["clean"] < pet_atual["hungry"]) and (pet_atual["clean"] < pet_atual["happiness"]) and pet_atual["clean"] < 50 then
+                pet_atual["atual_state"] = "STATE_CLEAN"
+            elseif (pet_atual["sleep"] < pet_atual["helthy"]) and (pet_atual["sleep"] < pet_atual["hungry"]) and (pet_atual["sleep"] < pet_atual["happiness"]) and pet_atual["sleep"] < 50 then
+                pet_atual["atual_state"] = "STATE_TIRED"
+            end
         end
-        state_pet = 200
+        save_pet()
+        state_pet = 100
     else
         state_pet = state_pet - 1
     end
+end
+
+--** Função que salva o pet
+function save_pet()
+    local payload = JSON:encode(pet_atual)
+    local response_body = { }
+
+    local res, code, response_headers, status = http.request
+    {
+      url = "http://localhost:3000/pets/" ..pet_atual["id"].. ".json",
+      method = "PUT",
+      headers =
+      {
+        ["Authorization"] = "Maybe you need an Authorization header?",
+        ["Content-Type"] = "application/json",
+        ["Content-Length"] = payload:len()
+      },
+      source = ltn12.source.string(payload),
+      sink = ltn12.sink.table(response_body)
+    }
+
 end
 
 --** Motor do jogo Acesso
@@ -385,9 +416,11 @@ function motor_jogo()
     if pet_atual["helthy"] == 0 or pet_atual["happiness"] == 0 or pet_atual["hungry"] == 0 or pet_atual["sleep"] == 0 or pet_atual["clean"] == 0 then
         pet_atual["atual_state"] = "STATE_DEAD"
         dead = true
+        save_pet()
     end
 
     verifica_estado()
+
 end
 
 --** Verifico se o login já existe
@@ -408,10 +441,18 @@ function get_user_pet_by_index(T, index)
     for k, data in ipairs(T) do
         if data["user_id"] == usuario_logado["id"] then
             if flag == index then
-                actual_user_pet["id"] = data["id"]
-                actual_user_pet["user_id"] = data["user_id"]
-                actual_user_pet["pet_id"] = data["pet_id"]
-                return data["pet_id"]
+                pet_atual["id"] = data["id"]
+                pet_atual["nome"] = data["nome"]
+                pet_atual["skin"] = data["skin"]
+                pet_atual["life_time"] = data["life_time"]
+                pet_atual["hungry"] = data["hungry"]
+                pet_atual["clean"] = data["clean"]
+                pet_atual["sleep"] = data["sleep"]
+                pet_atual["happiness"] = data["happiness"]
+                pet_atual["helthy"] = data["helthy"]
+                pet_atual["atual_state"] = data["atual_state"]
+                pet_atual["user_id"] = data["user_id"]
+                return true
             end
             flag = flag + 1
         end
@@ -524,11 +565,10 @@ end
 
 --** Função que cadastra um novo pet
 function cadastrar_pet()
-    get_pets()
-    
     pet = {}
     pet["nome"] = form_nome_pet["text"]
     pet["skin"] = 1
+    pet["user_id"] = usuario_logado["id"]
 
     if pet1 == false then
         pet["skin"] = 2
@@ -555,38 +595,11 @@ function cadastrar_pet()
         return false
     end
 
-    att = att + 1
-
-    user_pet = {}
-    user_pet["user_id"] = usuario_logado["id"]
-    user_pet["pet_id"] = att
-
-    local payload = JSON:encode(user_pet)
-    local response_body = { }
-
-    local res, code, response_headers, status = http.request
-    {
-      url = "http://localhost:3000/user_pets.json",
-      method = "POST",
-      headers =
-      {
-        ["Authorization"] = "Maybe you need an Authorization header?",
-        ["Content-Type"] = "application/json",
-        ["Content-Length"] = payload:len()
-      },
-      source = ltn12.source.string(payload),
-      sink = ltn12.sink.table(response_body)
-    }
-
-    if code ~= 201 then
-        return false
-    end
-
     return true   
 end
 
 function update_qtd_pet()
-    get_user_pets()
+    get_pets()
 
     local qtd = 0
 
@@ -603,12 +616,11 @@ end
 --** Funcao que pega o pet
 function pega_pet(index)
     --** Pego o pet numero *index* do usuario
-    get_user_pets()
+    get_pets()
 
-    local id = get_user_pet_by_index(data, index)
+    local flag = get_user_pet_by_index(data, index)
 
-    if id ~= false then
-        get_pet(id)
+    if flag ~= false then
         if pet_atual["atual_state"] == "STATE_DEAD" then
             dead = true 
         else
@@ -627,27 +639,6 @@ end
 
 --** funcao que deleta o pet
 function delete_pet()
-    local payload = JSON:encode(actual_user_pet)
-    local response_body = { }
-
-    local res, code, response_headers, status = http.request
-    {
-      url = "http://localhost:3000/user_pets/" .. actual_user_pet["id"] .. ".json",
-      method = "DELETE",
-      headers =
-      {
-        ["Authorization"] = "Maybe you need an Authorization header?",
-        ["Content-Type"] = "application/json",
-        ["Content-Length"] = payload:len()
-      },
-      source = ltn12.source.string(payload),
-      sink = ltn12.sink.table(response_body)
-    }
-    
-    if code ~= 204 then
-        return false
-    end
-
     local payload = JSON:encode(pet_atual)
     local response_body = { }
 
@@ -828,6 +819,8 @@ function love.mousepressed(x, y)
     elseif ACTUAL_SCREEN == "PET_SCREEN" then
         if x >= 5 and x <= 40 and y >= 435 and y <= 470 then
             seting_rating(1)
+            update_qtd_pet() 
+            state_pet = 200
             light = true
             dead = false 
             ACTUAL_SCREEN = "LISTAGEM_SCREEN"
@@ -836,6 +829,7 @@ function love.mousepressed(x, y)
         if  x >= 376 and x <= (376 + 23) and y >= 4 and y <= (4 + 20) then
             if delete_pet() == true then
                 update_qtd_pet()
+                state_pet = 200
                 ACTUAL_SCREEN = "LISTAGEM_SCREEN"
             end
         end
@@ -844,15 +838,14 @@ function love.mousepressed(x, y)
             if x >= 6 and x <= (6 + 69) and y >= 512 and y <= (512 + 70) then
                 if light == true then
                     if pet_atual["hungry"] <= 75 then
-                        pet_atual["helthy"] = ((pet_atual["helthy"] + 1) >= 100 and 100 or (pet_atual["helthy"] + 1))
                         pet_atual["happiness"] = ((pet_atual["happiness"] + 10) >= 100 and 100 or (pet_atual["happiness"] + 10))
                         pet_atual["hungry"] = ((pet_atual["hungry"] + 15)  >= 100 and 100 or (pet_atual["hungry"] + 15))
                         pet_atual["clean"] = pet_atual["clean"] - 15
                     elseif pet_atual["hungry"] >= 100 then
-                        pet_atual["helthy"] = pet_atual["helthy"] - 1
+                        pet_atual["helthy"] = pet_atual["helthy"] - 5
                         pet_atual["hungry"] = 100
                     else
-                        pet_atual["hungry"] = ((pet_atual["hungry"] + 15)  >= 100 and 100 or (pet_atual["hungry"] + 15))
+                        pet_atual["hungry"] = ((pet_atual["hungry"] + 5)  >= 100 and 100 or (pet_atual["hungry"] + 5))
                     end
                 end
             end
@@ -860,7 +853,7 @@ function love.mousepressed(x, y)
             if x >= 86 and x <= (86 + 69) and y >= 512 and y <= (512 + 70) then
                 if light == true then
                     if pet_atual["clean"] < 75 then
-                        pet_atual["helthy"] = ((pet_atual["helthy"] + 20) >= 100 and 100 or (pet_atual["helthy"] + 40))
+                        pet_atual["helthy"] = ((pet_atual["helthy"] + 5) >= 100 and 100 or (pet_atual["helthy"] + 5))
                         pet_atual["happiness"] = ((pet_atual["happiness"] + 10) >= 100 and 100 or (pet_atual["happiness"] + 10))
                         pet_atual["hungry"] = pet_atual["hungry"] - 5 
                         pet_atual["clean"] = 100
